@@ -1,0 +1,15 @@
+@page "/arscene"
+@inject IJSRuntime JSRuntime
+
+<h3>AR Scene</h3>
+<canvas id="threeCanvas" style="width: 100%; height: 400px;"></canvas>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("initScene", "threeCanvas");
+        }
+    }
+}

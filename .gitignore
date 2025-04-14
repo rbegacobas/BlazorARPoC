@@ -1,0 +1,17 @@
+# Archivos de compilación de .NET
+bin/
+obj/
+
+# Archivos de Visual Studio Code
+.vscode/
+
+# Archivos temporales
+*.tmp
+*.bak
+
+# Certificados generados
+key.pem
+cert.pem
+
+# Dependencias de node (si las hubiera)
+node_modules/
