@@ -1,7 +1,3 @@
-¡Entendido! Vamos a crear un archivo `README.md` completo que incluya toda la información necesaria para tu proyecto `BlazorARPoC`, desde la descripción, requisitos, instalación, características, notas, y posibles mejoras futuras, todo en un solo documento bien estructurado.
-
----
-
 ### Crear el archivo `README.md`
 
 1. **Abre un nuevo archivo `README.md`**:
@@ -196,4 +192,3 @@
 3. **Guarda el archivo**:
     - Presiona `Ctrl+O`, `Enter`, y luego `Ctrl+X` para salir de `nano`.
 
----
