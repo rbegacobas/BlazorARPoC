@@ -1,36 +1,117 @@
 @page "/arscene"
 @inject IJSRuntime JS
 
-<h3>AR Scene</h3>
+<div class="container @(isInARMode ? "hidden" : "")">
+    <h3 class="catalog-title">Catálogo AR de Productos</h3>
 
-<canvas id="threeCanvas"></canvas>
+    <div class="product-grid">
+        @foreach (var product in products)
+        {
+            <div class="product-card" @onclick="() => SelectProduct(product)">
+                <div class="product-image">
+                    <img src="@product.ImageUrl" alt="@product.Name" />
+                </div>
+                <div class="product-info">
+                    <h4>@product.Name</h4>
+                    <p>@product.Description</p>
+                </div>
+            </div>
+        }
+    </div>
+</div>
 
-@if (!isInARMode)
+<canvas id="threeCanvas" class="@(isInARMode ? "" : "preview-mode")"></canvas>
+
+@if (selectedProduct != null && !isInARMode)
 {
-    <button class="ar-button enter-ar" @onclick="EnterAR">Enter AR</button>
+    <div class="product-preview-info">
+        <h4>@selectedProduct.Name</h4>
+        <p>@selectedProduct.Description</p>
+        <button class="ar-button enter-ar" @onclick="EnterAR">Ver en AR</button>
+        <button class="ar-button back" @onclick="UnselectProduct">Volver al catálogo</button>
+    </div>
 }
-else
+else if (isInARMode)
 {
-    <button class="ar-button exit-ar" @onclick="ExitAR">Exit AR</button>
+    <button class="ar-button exit-ar" @onclick="ExitAR">Salir de AR</button>
 }
 
 @code {
     private bool isInARMode = false;
+    private Product? selectedProduct = null;
+    private bool isSceneInitialized = false;
+
+    private List<Product> products = new List<Product>
+    {
+        new Product
+        {
+            Id = "chair",
+            Name = "Silla Moderna",
+            Description = "Silla ergonómica con diseño moderno y materiales premium",
+            ImageUrl = "images/silla.jpg",
+            ModelUrl = "models/chair.glb"
+        },
+        new Product
+        {
+            Id = "vase",
+            Name = "Jarrón Decorativo",
+            Description = "Jarrón de cerámica artesanal para decoración interior",
+            ImageUrl = "images/jarron.jpg",
+            ModelUrl = "models/vase.glb"
+        },
+        new Product
+        {
+            Id = "plant",
+            Name = "Planta Artificial",
+            Description = "Planta decorativa ideal para espacios de oficina o hogar",
+            ImageUrl = "images/planta.jpg",
+            ModelUrl = "models/plant.glb"
+        },
+        new Product
+        {
+            Id = "desk",
+            Name = "Escritorio de Trabajo",
+            Description = "Escritorio funcional con amplio espacio de trabajo",
+            ImageUrl = "images/escritorio.jpg",
+            ModelUrl = "models/desk.glb"
+        }
+    };
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (firstRender && !isSceneInitialized)
         {
-            await JS.InvokeVoidAsync("initScene", "threeCanvas");
+            // Usar un pequeño retraso para asegurar que todos los scripts se carguen
+            await Task.Delay(100);
+            await JS.InvokeVoidAsync("initScene", "threeCanvas", null);
+            isSceneInitialized = true;
         }
+    }
+
+    private async Task SelectProduct(Product product)
+    {
+        if (selectedProduct?.Id != product.Id)
+        {
+            selectedProduct = product;
+            await JS.InvokeVoidAsync("initScene", "threeCanvas", product.Id);
+        }
+    }
+
+    private void UnselectProduct()
+    {
+        selectedProduct = null;
+        isSceneInitialized = false; // Permitir reinicializar la escena al volver al catálogo
     }
 
     private async Task EnterAR()
     {
-        var success = await JS.InvokeAsync<bool>("enterAR");
-        if (success)
+        if (selectedProduct != null)
         {
-            isInARMode = true;
+            var success = await JS.InvokeAsync<bool>("enterAR");
+            if (success)
+            {
+                isInARMode = true;
+            }
         }
     }
 
@@ -39,35 +120,121 @@ else
         await JS.InvokeVoidAsync("exitAR");
         isInARMode = false;
     }
+
+    public class Product
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public string ImageUrl { get; set; }
+        public string ModelUrl { get; set; }
+    }
 }
 
 <style>
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    .catalog-title {
+        text-align: center;
+        margin-bottom: 30px;
+        color: #333;
+    }
+
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+    }
+
+    .product-card {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+        cursor: pointer;
+        background-color: white;
+    }
+
+    .product-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .product-image {
+        height: 200px;
+        overflow: hidden;
+    }
+
+    .product-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .product-info {
+        padding: 15px;
+    }
+
+    .product-info h4 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: #333;
+    }
+
+    .product-info p {
+        color: #666;
+        font-size: 14px;
+        margin: 0;
+    }
+
     canvas {
         width: 100% !important;
         height: 100vh !important;
         display: block;
     }
 
+    .preview-mode {
+        height: 400px !important;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .product-preview-info {
+        max-width: 600px;
+        margin: 20px auto;
+        text-align: center;
+    }
+
     .ar-button {
-        position: absolute;
         padding: 12px 24px;
         font-size: 16px;
         color: white;
         border: none;
         border-radius: 5px;
         cursor: pointer;
-        z-index: 1000;
-    }
+ margin: 10px;
+ }
 
-    .enter-ar {
-        top: max(20px, env(safe-area-inset-top));
-        left: max(20px, env(safe-area-inset-left));
-        background-color: #007bff;
-    }
+.enter-ar {
+background-color: #007bff;
+}
 
-    .exit-ar {
-        top: max(20px, env(safe-area-inset-top));
-        right: max(20px, env(safe-area-inset-right));
-        background-color: #dc3545;
-    }
+.back {
+background-color: #6c757d;
+}
+
+.exit-ar {
+position: absolute;
+top: max(20px, env(safe-area-inset-top));
+right: max(20px, env(safe-area-inset-right));
+background-color: #dc3545;
+z-index: 1000;
+}
 </style>

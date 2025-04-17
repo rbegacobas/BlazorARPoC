@@ -30,8 +30,11 @@
     </div>
     <script src="_framework/blazor.webassembly.js"></script>
 
-    <script src="js/three.module.min.js" type="module"></script>
-    <script src="js/scene.js" type="module"></script>
+    <!-- Asegúrate de cargar Three.js antes del GLTFLoader -->
+    <script src="js/three.min.js"></script>
+    <script src="js/GLTFLoader.js"></script>
+    <!-- No uses type="module" para asegurar que las funciones están disponibles globalmente -->
+    <script src="js/scene.js"></script>
 </body>
 
 </html>
