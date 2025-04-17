@@ -28,7 +28,7 @@ function initScene(canvasId, productId = null) {
         // Primera inicialización de la escena
         scene = new THREE.Scene();
         camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-        renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+        renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true }); // Habilitar alpha para transparencia
 
         // Ajustar el tamaño inicial del renderer
         renderer.setSize(canvas.clientWidth, canvas.clientHeight);
@@ -46,8 +46,8 @@ function initScene(canvasId, productId = null) {
         });
     }
 
-    // Añadir un fondo de color a la escena
-    scene.background = new THREE.Color(0xf5f5f5); // Gris claro
+    // Establecer fondo solo en modo no-AR (vista previa)
+    scene.background = new THREE.Color(0xf5f5f5); // Gris claro para vista previa
 
     // Añadir luces a la escena
     scene.clear();
@@ -62,7 +62,7 @@ function initScene(canvasId, productId = null) {
     scene.add(directionalLight);
 
     // Ajustar la cámara
-    camera.position.set(0, 0.5, 2); // Aumentar la distancia para asegurar que el modelo sea visible
+    camera.position.set(0, 0.5, 2);
     camera.lookAt(0, 0, 0);
 
     if (productId) {
@@ -75,7 +75,7 @@ function initScene(canvasId, productId = null) {
 }
 
 function showDefaultCube() {
-    const geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5); // Aumentar el tamaño del cubo
+    const geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
     const material = new THREE.MeshStandardMaterial({
         color: 0x00ff00,
         roughness: 0.7,
@@ -113,7 +113,7 @@ function loadModel(productId) {
 
     // Definir ajustes específicos para cada modelo
     const modelSettings = {
-        'chair': { scale: 1.0, position: { x: 0, y: 0, z: 0 } }, // Aumentar la escala para prueba
+        'chair': { scale: 1.0, position: { x: 0, y: 0, z: 0 } },
         'vase': { scale: 1.0, position: { x: 0, y: 0, z: 0 } },
         'plant': { scale: 1.0, position: { x: 0, y: 0, z: 0 } },
         'desk': { scale: 1.0, position: { x: 0, y: -0.1, z: 0 } }
@@ -145,7 +145,7 @@ function loadModel(productId) {
             console.log("Model center:", center);
 
             // Asegurarse de que la cámara pueda ver el modelo
-            camera.position.z = Math.max(size.x, size.y, size.z) * 2; // Ajustar la distancia de la cámara
+            camera.position.z = Math.max(size.x, size.y, size.z) * 2;
             camera.lookAt(center);
 
             // Añadir el modelo a la escena
@@ -171,7 +171,7 @@ function loadModel(productId) {
         (error) => {
             console.error('Error loading model:', error);
             scene.remove(loadingIndicator);
-            showDefaultCube(); // Mostrar un cubo por defecto si hay un error
+            showDefaultCube();
         }
     );
 }
@@ -192,18 +192,25 @@ async function enterAR() {
             optionalFeatures: ['bounded-floor', 'hand-tracking']
         });
 
+        // Hacer el fondo transparente para que se vea el feed de la cámara
+        scene.background = null;
+
         renderer.xr.enabled = true;
         await renderer.xr.setSession(session);
 
         // Ajustar la posición del modelo en AR
         if (currentModel) {
-            currentModel.position.set(0, 0, -1);
+            currentModel.position.set(0, -0.5, -1); // Ajustar para que el modelo esté frente al usuario
             console.log("Model repositioned for AR at:", currentModel.position);
         }
 
+        // Usar el bucle de animación de WebXR para renderizar
         renderer.setAnimationLoop((timestamp, frame) => {
-            if (frame && currentModel) {
-                currentModel.rotation.y += 0.01;
+            if (frame) {
+                if (currentModel) {
+                    currentModel.rotation.y += 0.01;
+                }
+                // WebXR maneja la cámara automáticamente, no necesitamos pasar 'camera'
                 renderer.render(scene, camera);
             }
         });
@@ -211,6 +218,9 @@ async function enterAR() {
         session.addEventListener('end', () => {
             renderer.xr.enabled = false;
             renderer.setAnimationLoop(null);
+
+            // Restaurar el fondo para la vista previa
+            scene.background = new THREE.Color(0xf5f5f5);
 
             // Restaurar la animación normal
             if (animateLoop) {
